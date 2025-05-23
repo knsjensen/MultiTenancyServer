@@ -88,10 +88,24 @@ namespace MultiTenancyServer.Http
                             _tenant = tenant;
                             break;
                         }
-                        else if (_logger.IsEnabled(LogLevel.Debug))
+                        else
                         {
-                            _logger.LogDebug("No tenant matched canonical name {CanonicalName}, parsed by {RequestParser} for request {RequestUrl}.",
-                                canonicalName, parser.GetType().Name, httpContext.Request.GetDisplayUrl());
+                            tenant = await _tenantStore.FindByIdAsync(normalizedCanonicalName, cancellationToken).ConfigureAwait(false);
+                            if (tenant != null)
+                            {
+                                if (_logger.IsEnabled(LogLevel.Debug))
+                                {
+                                    _logger.LogDebug("Tenant {TenantId} matched, parsed by {RequestParser} for request {RequestUrl}.",
+                                        normalizedCanonicalName, parser.GetType().Name, httpContext.Request.GetDisplayUrl());
+                                }
+                                _tenant = tenant;
+                                break;
+                            }
+                            else if (_logger.IsEnabled(LogLevel.Debug))
+                            {
+                                _logger.LogDebug("No tenant matched canonical name or tenantId {CanonicalName}, parsed by {RequestParser} for request {RequestUrl}.",
+                                    canonicalName, parser.GetType().Name, httpContext.Request.GetDisplayUrl());
+                            }
                         }
                     }
                     else if (_logger.IsEnabled(LogLevel.Debug))
